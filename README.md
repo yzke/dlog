@@ -1,5 +1,7 @@
 # README.md
 
+[中文文档](https://github.com/ABdeeglr/dlog/blob/main/README_CN.md)
+
 ### `dlog`
 
 A command-line tool for developers to easily log their work progress.
