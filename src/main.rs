@@ -1,16 +1,15 @@
 // src/main.rs
 
 use clap::{Parser, Subcommand};
-use std::io::{self, Write, Read};
-use std::process::Command;
+use std::io::{self,Write, Read};
 use rusqlite::Connection;
 use std::env;
 use chrono::{DateTime, Utc, NaiveDate};
+use std::process::Command; // fix_log 需要它
 
 mod db;
 use db::DlogError;
 
-// We'll use DlogError throughout
 type Result<T> = std::result::Result<T, DlogError>;
 
 #[derive(Debug)]
@@ -48,8 +47,8 @@ enum Commands {
         num: Option<u32>,
         #[arg(short, long, help = "Recursive: include subdirectories")]
         recursive: bool,
-        #[arg(short, long, help = "Show tags in output")]
-        tags: bool,
+        #[arg(short, long, help = "Filter logs by tag")]
+        tag: Option<String>, // 重命名：用于过滤
         #[arg(long, help = "Filter by date (YYYY-MM-DD)")]
         date: Option<String>,
         #[arg(short, long, help = "Search keyword in content/tags")]
@@ -103,7 +102,7 @@ fn log_entry(message: Option<String>, tags: Option<String>) -> Result<()> {
 fn get_logs(
     num: Option<u32>,
     recursive: bool,
-    show_tags: bool,
+    filter_tag: Option<String>,
     date: Option<String>,
     search: Option<String>,
 ) -> Result<()> {
@@ -121,6 +120,15 @@ fn get_logs(
     } else {
         query.push_str("directory = ? ");
         params.push(Box::new(current_dir));
+    }
+
+    // 🔑 标签过滤：支持逗号分隔的多标签
+    if let Some(tag) = &filter_tag {
+        query.push_str("AND (tags = ? OR tags LIKE ? OR tags LIKE ? OR tags LIKE ?) ");
+        params.push(Box::new(tag.clone()));               // 唯一标签
+        params.push(Box::new(format!("{},%", tag)));      // 开头
+        params.push(Box::new(format!("%,{},%", tag)));    // 中间
+        params.push(Box::new(format!("%,{}", tag)));      // 结尾
     }
 
     if let Some(d) = &date {
@@ -171,9 +179,9 @@ fn get_logs(
         let dt: DateTime<Utc> = log.timestamp.parse().unwrap_or(Utc::now());
         let formatted_time = dt.format("%Y-%m-%d %H:%M:%S").to_string();
 
-        if show_tags {
-            let tag_str = log.tags.unwrap_or_else(|| "–".to_string());
-            println!("[{}] {} | Tags: {}", log.id, formatted_time, tag_str);
+        // 始终显示标签（如果存在）
+        if let Some(ref tags) = log.tags {
+            println!("[{}] {} | Tags: {}", log.id, formatted_time, tags);
         } else {
             println!("[{}] {}", log.id, formatted_time);
         }
@@ -268,8 +276,8 @@ fn main() {
         Some(Commands::Log { message, tags }) => {
             log_entry(message.clone(), tags.clone())
         }
-        Some(Commands::Get { num, recursive, tags, date, search }) => {
-            get_logs(*num, *recursive, *tags, date.clone(), search.clone())
+        Some(Commands::Get { num, recursive, tag, date, search }) => {
+            get_logs(*num, *recursive, tag.clone(), date.clone(), search.clone())
         }
         Some(Commands::Fix { id }) => {
             fix_log(*id)
