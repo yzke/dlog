@@ -63,3 +63,9 @@ Retrieve your logs from the command line.
 
 - **View logs with tags:**
   `dlog get -t`
+#### 4. Edit or Delete Your Logs
+
+- **Edit the log:**
+  `dlog fix 3`
+- **Delete the log:**
+  `dlog del 5`

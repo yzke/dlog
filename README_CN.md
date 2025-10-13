@@ -65,3 +65,11 @@ A command-line tool for developers to easily log their work progress.
 - **查看日志并显示标签：**
   `dlog get -t`
 
+##### 4. 编辑或删除日志
+
+- **编辑指定 ID 的日志：**
+  `dlog fix 3`
+
+- **删除指定 ID 的日志（需确认）：**
+  `dlog del 5`
+

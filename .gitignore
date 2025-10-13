@@ -1,1 +1,6 @@
 /target
+**/*.db
+**/*.sqlite
+Cargo.lock
+.DS_Store
+*.swp

@@ -1,38 +1,47 @@
 // src/db.rs
-
-use rusqlite::{Connection, Result};
-use rusqlite::ffi::ErrorCode; // <-- 添加这行来引入正确的类型
+use rusqlite::Connection;
 use std::path::Path;
 
-pub fn initialize_db(db_path: &Path) -> Result<()> {
-    // 检查父目录是否存在，如果不存在则创建
+#[derive(Debug)]
+pub enum DlogError {
+    Io(std::io::Error),
+    Sql(rusqlite::Error),
+}
+
+impl std::fmt::Display for DlogError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DlogError::Io(e) => write!(f, "IO error: {}", e),
+            DlogError::Sql(e) => write!(f, "Database error: {}", e),
+        }
+    }
+}
+
+impl std::error::Error for DlogError {}
+
+pub fn initialize_db(db_path: &Path) -> Result<(), DlogError> {
     if let Some(parent) = db_path.parent() {
         if !parent.exists() {
-            std::fs::create_dir_all(parent)
-                .map_err(|e| rusqlite::Error::SqliteFailure(
-                    rusqlite::ffi::Error {
-                        code: ErrorCode::CannotOpen, // <-- 这里现在是正确的
-                        extended_code: 0
-                    },
-                    Some(format!("Failed to create directory: {}", e))
-                ))?;
+            std::fs::create_dir_all(parent).map_err(DlogError::Io)?;
         }
     }
 
-    let conn = Connection::open(db_path)?;
-
+    let conn = Connection::open(db_path).map_err(DlogError::Sql)?;
     conn.execute(
         "CREATE TABLE IF NOT EXISTS logs (
             id          INTEGER PRIMARY KEY,
             timestamp   TEXT NOT NULL,
             directory   TEXT NOT NULL,
             content     TEXT NOT NULL,
-            tags        TEXT,
-            metadata    TEXT,
-            level       TEXT
+            tags        TEXT
         )",
-        (),
-    )?;
-
+        [],
+    ).map_err(DlogError::Sql)?;
     Ok(())
 }
+
+pub fn get_db_path() -> std::path::PathBuf {
+    let home_dir = dirs::home_dir().expect("Could not find home directory");
+    home_dir.join(".config/dlog/dlog.db")
+}
+
