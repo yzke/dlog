@@ -1,11 +1,12 @@
 [package]
 name = "dlog"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 
 [dependencies]
-rusqlite = "0.31.0"
+rusqlite = { version = "0.31.0", features = ["bundled"] }
 clap = { version = "4.5.4", features = ["derive"] }
 dirs = "5.0"
 tempfile = "3.16"
+thiserror = "1.0"
 chrono = "0.4"

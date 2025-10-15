@@ -195,13 +195,14 @@ dependencies = [
 
 [[package]]
 name = "dlog"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "chrono",
  "clap",
  "dirs",
  "rusqlite",
  "tempfile",
+ "thiserror",
 ]
 
 [[package]]
@@ -347,6 +348,7 @@ version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c10584274047cb335c23d3e61bcef8e323adae7c5c8c760540f73610177fc3f"
 dependencies = [
+ "cc",
  "pkg-config",
  "vcpkg",
 ]
